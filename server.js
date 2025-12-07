@@ -12,7 +12,7 @@ const dbConfig = {
     host: process.env.MYSQLHOST || 'localhost',
     user: process.env.MYSQLUSER || 'mim_user',
     password: process.env.MYSQLPASSWORD || 'mim_password',
-    database: process.env.MYSQLDATABASE || 'mim_crm',
+    database: process.env.MYSQLDATABASE || 'railway',
     port: process.env.MYSQLPORT || 3306,
     waitForConnections: true,
     connectionLimit: 10,
