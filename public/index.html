@@ -2,53 +2,184 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Make It Matter CRM</title>
+    <title>MIM CRM v1</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f4f6f8; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h2 { margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .tag { padding: 4px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold; }
-        .tag.won { background: #e6fffa; color: #00b37e; }
-        button { background: #0066cc; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0050a3; }
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h1 { color: #1a1a1a; font-size: 1.5rem; margin: 0; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .col { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .col-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
+        .col h2 { font-size: 1rem; margin: 0; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .card { background: #fff; border: 1px solid #eee; padding: 12px; border-radius: 8px; margin-bottom: 10px; transition: transform 0.1s; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-color: #ddd; }
+        .card strong { display: block; color: #333; margin-bottom: 4px; }
+        .meta { font-size: 0.85rem; color: #888; }
+        
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; margin-top: 5px; }
+        .tag.won { background: #dcfce7; color: #166534; }
+        .tag.new { background: #dbeafe; color: #1e40af; }
+        
+        button.primary { background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+        button.primary:hover { background: #1d4ed8; }
+        button.action { background: #e0e7ff; color: #3730a3; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-top: 8px; }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal.open { display: flex; }
+        .modal-content { background: white; padding: 20px; border-radius: 12px; width: 300px; }
+        .modal input, .modal select { width: 100%; padding: 8px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
     </style>
 </head>
 <body>
-    <h1>Make It Matter CRM + PM 🚀</h1>
-    <div class="container">
-        <div class="card"><h2>Organisaties</h2><div id="org-list">Laden...</div></div>
-        <div class="card"><h2>Deals (Sales)</h2><div id="deal-list">Laden...</div></div>
-        <div class="card"><h2>Projecten & Taken</h2><div id="project-list">Laden...</div></div>
+
+    <header>
+        <h1>Make It Matter CRM 🚀</h1>
+    </header>
+
+    <div class="grid">
+        <!-- ORGANISATIES -->
+        <div class="col">
+            <div class="col-header">
+                <h2>Organisaties</h2>
+                <button class="primary" onclick="openModal('modal-org')">+ Nieuw</button>
+            </div>
+            <div id="org-list">Laden...</div>
+        </div>
+
+        <!-- DEALS -->
+        <div class="col">
+            <div class="col-header">
+                <h2>Pipeline (Deals)</h2>
+                <button class="primary" onclick="openModal('modal-deal')">+ Nieuw</button>
+            </div>
+            <div id="deal-list">Laden...</div>
+        </div>
+
+        <!-- PROJECTEN -->
+        <div class="col">
+            <div class="col-header">
+                <h2>Projecten & Taken</h2>
+            </div>
+            <div id="project-list">Laden...</div>
+        </div>
+    </div>
+
+    <!-- MODAL: Nieuwe Organisatie -->
+    <div id="modal-org" class="modal">
+        <div class="modal-content">
+            <h3>Nieuwe Organisatie</h3>
+            <input type="text" id="org-name" placeholder="Bedrijfsnaam" required>
+            <input type="text" id="org-ind" placeholder="Industrie (bv. Tech)">
+            <div class="modal-actions">
+                <button onclick="closeModals()">Annuleren</button>
+                <button class="primary" onclick="saveOrg()">Opslaan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Nieuwe Deal -->
+    <div id="modal-deal" class="modal">
+        <div class="modal-content">
+            <h3>Nieuwe Deal</h3>
+            <select id="deal-org-select"><option>Kies Organisatie...</option></select>
+            <input type="text" id="deal-title" placeholder="Deal Titel (bv. Website)" required>
+            <input type="number" id="deal-amount" placeholder="Bedrag (€)">
+            <div class="modal-actions">
+                <button onclick="closeModals()">Annuleren</button>
+                <button class="primary" onclick="saveDeal()">Opslaan</button>
+            </div>
+        </div>
     </div>
 
     <script>
+        let globalData = {};
+
         async function loadData() {
             const res = await fetch('/api/dashboard');
-            const data = await res.json();
-            
-            document.getElementById('org-list').innerHTML = data.orgs.map(org => 
-                `<div class="item"><strong>${org.name}</strong><span style="color:#666">${org.industry}</span></div>`).join('');
+            globalData = await res.json();
+            render();
+        }
 
-            document.getElementById('deal-list').innerHTML = data.deals.map(deal => `
-                <div class="item">
-                    <div><strong>${deal.title}</strong><br><small>€${deal.amount}</small></div>
-                    ${deal.stage !== 'won' ? `<button onclick="winDeal('${deal.id}')">Win!</button>` : `<span class="tag won">WON</span>`}
+        function render() {
+            // Render Orgs
+            document.getElementById('org-list').innerHTML = globalData.orgs.map(org => `
+                <div class="card">
+                    <strong>${org.name}</strong>
+                    <div class="meta">${org.industry || '-'}</div>
                 </div>`).join('');
 
-            document.getElementById('project-list').innerHTML = data.projects.map(proj => {
-                const projectTasks = data.tasks.filter(t => t.project_id === proj.id);
-                return `<div class="item" style="display:block"><strong style="color:#0066cc">${proj.title}</strong>
-                        <ul style="margin: 5px 0 0 20px; padding:0; font-size:0.9em; color:#555;">
-                        ${projectTasks.map(t => `<li>${t.title}</li>`).join('')}</ul></div>`
+            // Vul Select voor Deals
+            document.getElementById('deal-org-select').innerHTML = globalData.orgs.map(org => 
+                `<option value="${org.id}">${org.name}</option>`).join('');
+
+            // Render Deals
+            document.getElementById('deal-list').innerHTML = globalData.deals.map(deal => `
+                <div class="card">
+                    <strong>${deal.title}</strong>
+                    <div class="meta">${deal.org_name || 'Onbekend'} • €${deal.amount}</div>
+                    ${deal.stage !== 'won' 
+                        ? `<button class="action" onclick="winDeal('${deal.id}')">✨ Markeer Gewonnen</button>` 
+                        : `<span class="tag won">WON</span>`}
+                </div>`).join('');
+
+            // Render Projects
+            document.getElementById('project-list').innerHTML = globalData.projects.map(proj => {
+                const tasks = globalData.tasks.filter(t => t.project_id === proj.id);
+                return `
+                <div class="card" style="border-left: 4px solid #2563eb">
+                    <strong>${proj.title}</strong>
+                    <div class="meta">${proj.org_name}</div>
+                    <ul style="margin:8px 0 0 20px; padding:0; font-size:0.85em; color:#666">
+                        ${tasks.map(t => `<li>${t.title}</li>`).join('')}
+                    </ul>
+                </div>`
             }).join('');
         }
+
+        // --- ACTIES ---
+
+        async function saveOrg() {
+            const name = document.getElementById('org-name').value;
+            const industry = document.getElementById('org-ind').value;
+            if(!name) return alert('Naam is verplicht');
+
+            await fetch('/api/organizations', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name, industry })
+            });
+            closeModals();
+            loadData();
+        }
+
+        async function saveDeal() {
+            const organization_id = document.getElementById('deal-org-select').value;
+            const title = document.getElementById('deal-title').value;
+            const amount = document.getElementById('deal-amount').value;
+            
+            await fetch('/api/deals', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ organization_id, title, amount })
+            });
+            closeModals();
+            loadData();
+        }
+
         async function winDeal(id) {
-            if(!confirm("Deal winnen?")) return;
+            if(!confirm("Deal winnen en project starten?")) return;
             await fetch(`/api/deals/${id}/win`, { method: 'PUT' });
             loadData();
         }
+
+        // --- MODAL UTILS ---
+        function openModal(id) { document.getElementById(id).classList.add('open'); }
+        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('open')); }
+
         loadData();
     </script>
 </body>
