@@ -2,101 +2,122 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>MIM CRM v1</title>
+    <title>MIM CRM v1.1</title>
     <style>
         body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         h1 { color: #1a1a1a; font-size: 1.5rem; margin: 0; }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .col { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .filter-bar { background: #fff; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: none; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .filter-bar.active { display: flex; border: 1px solid #2563eb; }
+        
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; } /* Nu 4 kolommen */
+        
+        .col { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 80vh; }
         .col-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
-        .col h2 { font-size: 1rem; margin: 0; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+        .col h2 { font-size: 0.9rem; margin: 0; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        .card { background: #fff; border: 1px solid #eee; padding: 12px; border-radius: 8px; margin-bottom: 10px; transition: transform 0.1s; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-color: #ddd; }
-        .card strong { display: block; color: #333; margin-bottom: 4px; }
-        .meta { font-size: 0.85rem; color: #888; }
+        .card { background: #fff; border: 1px solid #eee; padding: 12px; border-radius: 8px; margin-bottom: 10px; transition: all 0.2s; cursor: default; }
+        .card.interactive:hover { transform: translateY(-2px); border-color: #2563eb; cursor: pointer; }
+        .card strong { display: block; color: #333; margin-bottom: 4px; font-size: 0.95rem; }
+        .meta { font-size: 0.8rem; color: #888; display: block; margin-top: 4px; }
         
-        .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; margin-top: 5px; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; margin-top: 5px; }
         .tag.won { background: #dcfce7; color: #166534; }
-        .tag.new { background: #dbeafe; color: #1e40af; }
         
         button.primary { background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
         button.primary:hover { background: #1d4ed8; }
-        button.action { background: #e0e7ff; color: #3730a3; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-top: 8px; }
+        button.reset { background: transparent; color: #666; border: 1px solid #ddd; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
 
         /* Modal Styles */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
         .modal.open { display: flex; }
-        .modal-content { background: white; padding: 20px; border-radius: 12px; width: 300px; }
-        .modal input, .modal select { width: 100%; padding: 8px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal input, .modal select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+        @media (max-width: 1200px) { .grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
     <header>
         <h1>Make It Matter CRM 🚀</h1>
+        <div id="user-info" style="font-size: 0.9rem; color: #666;">Admin View</div>
     </header>
 
+    <!-- Filter Balk (verschijnt als je een org kiest) -->
+    <div id="filter-bar" class="filter-bar">
+        <span>Gefilterd op: <strong id="filter-name">Bedrijf</strong></span>
+        <button class="reset" onclick="resetFilter()">Toon Alles</button>
+    </div>
+
     <div class="grid">
-        <!-- ORGANISATIES -->
+        <!-- 1. ORGANISATIES -->
         <div class="col">
             <div class="col-header">
                 <h2>Organisaties</h2>
-                <button class="primary" onclick="openModal('modal-org')">+ Nieuw</button>
+                <button class="primary" onclick="openModal('modal-org')">+</button>
             </div>
             <div id="org-list">Laden...</div>
         </div>
 
-        <!-- DEALS -->
+        <!-- 2. PERSONEN (CONTACTS) -->
         <div class="col">
             <div class="col-header">
-                <h2>Pipeline (Deals)</h2>
-                <button class="primary" onclick="openModal('modal-deal')">+ Nieuw</button>
+                <h2>Personen</h2>
+                <button class="primary" onclick="openModal('modal-contact')">+</button>
+            </div>
+            <div id="contact-list">Laden...</div>
+        </div>
+
+        <!-- 3. DEALS -->
+        <div class="col">
+            <div class="col-header">
+                <h2>Deals</h2>
+                <button class="primary" onclick="openModal('modal-deal')">+</button>
             </div>
             <div id="deal-list">Laden...</div>
         </div>
 
-        <!-- PROJECTEN -->
+        <!-- 4. PROJECTEN -->
         <div class="col">
             <div class="col-header">
-                <h2>Projecten & Taken</h2>
+                <h2>Projecten</h2>
             </div>
             <div id="project-list">Laden...</div>
         </div>
     </div>
 
-    <!-- MODAL: Nieuwe Organisatie -->
-    <div id="modal-org" class="modal">
-        <div class="modal-content">
-            <h3>Nieuwe Organisatie</h3>
-            <input type="text" id="org-name" placeholder="Bedrijfsnaam" required>
-            <input type="text" id="org-ind" placeholder="Industrie (bv. Tech)">
-            <div class="modal-actions">
-                <button onclick="closeModals()">Annuleren</button>
-                <button class="primary" onclick="saveOrg()">Opslaan</button>
-            </div>
-        </div>
-    </div>
+    <!-- MODALS -->
+    <div id="modal-org" class="modal"><div class="modal-content">
+        <h3>Nieuwe Organisatie</h3>
+        <input type="text" id="org-name" placeholder="Bedrijfsnaam" required>
+        <input type="text" id="org-ind" placeholder="Industrie">
+        <div class="modal-actions"><button onclick="closeModals()">Annuleren</button><button class="primary" onclick="saveOrg()">Opslaan</button></div>
+    </div></div>
 
-    <!-- MODAL: Nieuwe Deal -->
-    <div id="modal-deal" class="modal">
-        <div class="modal-content">
-            <h3>Nieuwe Deal</h3>
-            <select id="deal-org-select"><option>Kies Organisatie...</option></select>
-            <input type="text" id="deal-title" placeholder="Deal Titel (bv. Website)" required>
-            <input type="number" id="deal-amount" placeholder="Bedrag (€)">
-            <div class="modal-actions">
-                <button onclick="closeModals()">Annuleren</button>
-                <button class="primary" onclick="saveDeal()">Opslaan</button>
-            </div>
-        </div>
-    </div>
+    <div id="modal-contact" class="modal"><div class="modal-content">
+        <h3>Nieuw Contactpersoon</h3>
+        <select id="contact-org-select"><option>Kies Organisatie...</option></select>
+        <input type="text" id="contact-first" placeholder="Voornaam">
+        <input type="text" id="contact-last" placeholder="Achternaam">
+        <input type="email" id="contact-email" placeholder="Email">
+        <div class="modal-actions"><button onclick="closeModals()">Annuleren</button><button class="primary" onclick="saveContact()">Opslaan</button></div>
+    </div></div>
+
+    <div id="modal-deal" class="modal"><div class="modal-content">
+        <h3>Nieuwe Deal</h3>
+        <select id="deal-org-select"><option>Kies Organisatie...</option></select>
+        <input type="text" id="deal-title" placeholder="Titel">
+        <input type="number" id="deal-amount" placeholder="Bedrag (€)">
+        <div class="modal-actions"><button onclick="closeModals()">Annuleren</button><button class="primary" onclick="saveDeal()">Opslaan</button></div>
+    </div></div>
 
     <script>
         let globalData = {};
+        let activeFilterId = null; // Houdt bij welk bedrijf geselecteerd is
 
         async function loadData() {
             const res = await fetch('/api/dashboard');
@@ -104,79 +125,111 @@
             render();
         }
 
+        function filterData(dataArray, orgIdField = 'organization_id') {
+            if (!activeFilterId) return dataArray;
+            return dataArray.filter(item => item[orgIdField] === activeFilterId || item.id === activeFilterId);
+        }
+
         function render() {
-            // Render Orgs
-            document.getElementById('org-list').innerHTML = globalData.orgs.map(org => `
-                <div class="card">
+            // ORGANISATIES (Linkerkolom)
+            // Als er gefilterd is, markeren we de actieve kaart
+            document.getElementById('org-list').innerHTML = globalData.orgs.map(org => {
+                const isActive = org.id === activeFilterId;
+                const style = isActive ? 'border: 2px solid #2563eb; background: #eff6ff;' : '';
+                return `
+                <div class="card interactive" style="${style}" onclick="setFilter('${org.id}', '${org.name}')">
                     <strong>${org.name}</strong>
-                    <div class="meta">${org.industry || '-'}</div>
-                </div>`).join('');
+                    <span class="meta">${org.industry || 'Geen industrie'}</span>
+                </div>`;
+            }).join('');
 
-            // Vul Select voor Deals
-            document.getElementById('deal-org-select').innerHTML = globalData.orgs.map(org => 
-                `<option value="${org.id}">${org.name}</option>`).join('');
+            // VUL SELECTS IN MODALS
+            const options = globalData.orgs.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+            document.getElementById('contact-org-select').innerHTML = options;
+            document.getElementById('deal-org-select').innerHTML = options;
 
-            // Render Deals
-            document.getElementById('deal-list').innerHTML = globalData.deals.map(deal => `
+            // PERSONEN
+            const filteredContacts = filterData(globalData.contacts);
+            document.getElementById('contact-list').innerHTML = filteredContacts.map(c => `
                 <div class="card">
-                    <strong>${deal.title}</strong>
-                    <div class="meta">${deal.org_name || 'Onbekend'} • €${deal.amount}</div>
-                    ${deal.stage !== 'won' 
-                        ? `<button class="action" onclick="winDeal('${deal.id}')">✨ Markeer Gewonnen</button>` 
-                        : `<span class="tag won">WON</span>`}
+                    <strong>${c.first_name} ${c.last_name}</strong>
+                    <span class="meta">📧 ${c.email || '-'}</span>
+                    <span class="meta">🏢 ${c.org_name}</span>
                 </div>`).join('');
 
-            // Render Projects
-            document.getElementById('project-list').innerHTML = globalData.projects.map(proj => {
-                const tasks = globalData.tasks.filter(t => t.project_id === proj.id);
+            // DEALS
+            const filteredDeals = filterData(globalData.deals);
+            document.getElementById('deal-list').innerHTML = filteredDeals.map(d => `
+                <div class="card">
+                    <strong>${d.title}</strong>
+                    <span class="meta">${d.org_name} • €${d.amount}</span>
+                    ${d.stage !== 'won' 
+                        ? `<button style="margin-top:5px; width:100%" class="primary" onclick="winDeal('${d.id}')">Win!</button>` 
+                        : `<span class="tag won">GEWONNEN</span>`}
+                </div>`).join('');
+
+            // PROJECTEN
+            const filteredProjects = filterData(globalData.projects);
+            document.getElementById('project-list').innerHTML = filteredProjects.map(p => {
+                const tasks = globalData.tasks.filter(t => t.project_id === p.id);
                 return `
                 <div class="card" style="border-left: 4px solid #2563eb">
-                    <strong>${proj.title}</strong>
-                    <div class="meta">${proj.org_name}</div>
-                    <ul style="margin:8px 0 0 20px; padding:0; font-size:0.85em; color:#666">
-                        ${tasks.map(t => `<li>${t.title}</li>`).join('')}
-                    </ul>
-                </div>`
+                    <strong>${p.title}</strong>
+                    <span class="meta">${p.org_name}</span>
+                    <div style="margin-top:5px; padding-top:5px; border-top:1px dashed #eee;">
+                        ${tasks.map(t => `<div style="font-size:0.8rem; color:#555">□ ${t.title}</div>`).join('')}
+                    </div>
+                </div>`;
             }).join('');
         }
 
-        // --- ACTIES ---
+        // --- FILTER LOGICA ---
+        function setFilter(id, name) {
+            activeFilterId = id;
+            document.getElementById('filter-bar').classList.add('active');
+            document.getElementById('filter-name').innerText = name;
+            render();
+        }
 
+        function resetFilter() {
+            activeFilterId = null;
+            document.getElementById('filter-bar').classList.remove('active');
+            render();
+        }
+
+        // --- API CALLS ---
         async function saveOrg() {
             const name = document.getElementById('org-name').value;
             const industry = document.getElementById('org-ind').value;
-            if(!name) return alert('Naam is verplicht');
+            if(!name) return;
+            await fetch('/api/organizations', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name, industry }) });
+            closeModals(); loadData();
+        }
 
-            await fetch('/api/organizations', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ name, industry })
-            });
-            closeModals();
-            loadData();
+        async function saveContact() {
+            const organization_id = document.getElementById('contact-org-select').value;
+            const first_name = document.getElementById('contact-first').value;
+            const last_name = document.getElementById('contact-last').value;
+            const email = document.getElementById('contact-email').value;
+            if(!first_name) return;
+            await fetch('/api/contacts', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ organization_id, first_name, last_name, email }) });
+            closeModals(); loadData();
         }
 
         async function saveDeal() {
             const organization_id = document.getElementById('deal-org-select').value;
             const title = document.getElementById('deal-title').value;
             const amount = document.getElementById('deal-amount').value;
-            
-            await fetch('/api/deals', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ organization_id, title, amount })
-            });
-            closeModals();
-            loadData();
+            await fetch('/api/deals', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ organization_id, title, amount }) });
+            closeModals(); loadData();
         }
 
         async function winDeal(id) {
-            if(!confirm("Deal winnen en project starten?")) return;
+            if(!confirm("Deal winnen?")) return;
             await fetch(`/api/deals/${id}/win`, { method: 'PUT' });
             loadData();
         }
 
-        // --- MODAL UTILS ---
         function openModal(id) { document.getElementById(id).classList.add('open'); }
         function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('open')); }
 
